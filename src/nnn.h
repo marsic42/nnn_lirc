@@ -280,3 +280,18 @@ static struct key bindings[] = {
 	{ KEY_MOUSE,      SEL_CLICK },
 #endif
 };
+
+/* Associate a LIRC command to a key */
+struct irkey {
+        char *cmd;       /* LIRC command */
+        int sym;         /* Key pressed */
+};
+
+static struct irkey irbindings[] = {
+        {"key-left",  KEY_LEFT},
+        {"key-right", KEY_RIGHT},
+        {"key-enter", KEY_ENTER},
+        {"key-up",    KEY_UP},
+        {"key-down",  KEY_DOWN},
+        {"key-quit",  'q'},
+};

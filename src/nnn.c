@@ -108,6 +108,15 @@
 #include <pwd.h>
 #include <grp.h>
 
+/* LIRC */
+#include <lirc_client.h>
+#define IRMAX 8
+static int             irLen;
+static int             irKey[IRMAX];
+static pthread_mutex_t irMut;
+static pthread_t       irThr;
+struct lirc_config *irconfig;
+
 #ifdef MACOS_BELOW_1012
 #include "../misc/macos-legacy/mach_gettime.h"
 #endif
@@ -3020,6 +3029,79 @@ static inline int handle_event(void)
 	return CONTROL('L');
 }
 
+/* LIRC */
+static void* irEvent(void *dummy)
+{
+  /* TODO: check status */
+  int i;
+  int oldtype;
+  int oldstate;
+  char *code, *cmd;
+
+  /* Thread is asynchronous and can be canceled */
+  pthread_setcancelstate(PTHREAD_CANCEL_ENABLE, &oldstate);
+  pthread_setcanceltype(PTHREAD_CANCEL_ASYNCHRONOUS, &oldtype);
+
+  /* Wait for LIRC codes */
+  while(true){
+    if(lirc_nextcode(&code)) continue;
+    if (code == NULL)        continue;
+
+    pthread_mutex_lock(&irMut);
+    while((lirc_code2char(irconfig, code, &cmd) == 0) && (cmd != NULL)){
+      if(irLen < IRMAX){
+	irKey[irLen] = -1;
+	for(i = 0; i < (int)ELEMENTS(irbindings); ++i)
+	  if(strcmp(cmd, irbindings[i].cmd) == 0)
+	    irKey[irLen] = irbindings[i].sym;
+	irLen++;
+      }
+    }
+    pthread_mutex_unlock(&irMut);
+
+    free(code);
+  }
+
+  /* Should never come here... */
+  return dummy;
+}
+
+static void irReset(void){
+  int i;
+
+  irLen = 0;
+  for(i = 0; i < IRMAX; i++)
+    irKey[i] = -1;
+}
+
+static void irInit(void)
+{
+  /* TODO: check status */
+  /* TODO: check + user config */
+  /* Init IR queue */
+  irReset();
+
+  /* Init mutex and launch event thread */
+  pthread_mutex_init(&irMut, NULL);
+  pthread_create(&irThr, NULL, irEvent, NULL);
+
+  /* Init LIRC */
+  lirc_init("nnn", 1);
+  lirc_readconfig(NULL, &irconfig, NULL);
+}
+
+static void irClear(void)
+{
+  /* TODO: check status */
+  /* Clear event thread */
+  pthread_cancel(irThr);
+  pthread_mutex_destroy(&irMut);
+
+  /* Clear LIRC */
+  lirc_freeconfig(irconfig);
+  lirc_deinit();
+}
+
 /*
  * Returns SEL_* if key is bound and 0 otherwise.
  * Also modifies the run and env pointers (used on SEL_{RUN,RUNARG}).
@@ -3036,9 +3118,19 @@ static int nextsel(int presel)
 
 	if (c == 0 || c == MSGWAIT) {
 try_quit:
-		c = getch();
-		//DPRINTF_D(c);
-		//DPRINTF_S(keyname(c));
+//             c = getch();
+//             //DPRINTF_D(c);
+//             //DPRINTF_S(keyname(c));
+	        pthread_mutex_lock(&irMut);
+	        if(irLen > 0){
+	          irLen--;
+	          c = irKey[irLen];
+	          irKey[irLen] = -1;
+	        }
+	        else{
+	          c = getch();
+	        }
+	        pthread_mutex_unlock(&irMut);
 
 #ifdef KEY_RESIZE
 		if (c == KEY_RESIZE)
@@ -7055,6 +7147,7 @@ nochange:
 
 			/* Invoke desktop opener as last resort */
 			spawn(opener, newpath, NULL, NULL, opener_flags);
+			irReset();
 
 			/* Move cursor to the next entry if not the last entry */
 			if (g_state.autonext && cur != ndents - 1)
@@ -8730,6 +8823,7 @@ int main(int argc, char *argv[])
 	}
 #endif
 
+	irInit();
 #ifndef NOMOUSE
 	if (!initcurses(&mask))
 #else
@@ -8752,6 +8846,7 @@ int main(int argc, char *argv[])
 #endif
 
 	exitcurses();
+	irClear();
 
 #ifndef NORL
 	if (rlhist) {
