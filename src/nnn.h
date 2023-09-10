@@ -3,7 +3,7 @@
  *
  * Copyright (C) 2014-2016, Lazaros Koromilas <lostd@2f30.org>
  * Copyright (C) 2014-2016, Dimitris Papastamos <sin@2f30.org>
- * Copyright (C) 2016-2023, Arun Prakash Jana <engineerarun@gmail.com>
+ * Copyright (C) 2016-2022, Arun Prakash Jana <engineerarun@gmail.com>
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -31,7 +31,6 @@
 #pragma once
 
 #include <curses.h>
-#include <wchar.h>
 
 #define CONTROL(c) ((c) & 0x1f)
 
@@ -57,7 +56,6 @@ enum action {
 	SEL_HOME,
 	SEL_END,
 	SEL_FIRST,
-	SEL_JUMP,
 	SEL_CDHOME,
 	SEL_CDBEGIN,
 	SEL_CDLAST,
@@ -105,7 +103,6 @@ enum action {
 	SEL_AUTONEXT,
 	SEL_EDIT,
 	SEL_PLUGIN,
-	SEL_SELSIZE,
 	SEL_SHELL,
 	SEL_LAUNCH,
 	SEL_PROMPT,
@@ -124,7 +121,7 @@ enum action {
 
 /* Associate a pressed key to an action */
 struct key {
-	wint_t sym;      /* Key pressed */
+	int sym;         /* Key pressed */
 	enum action act; /* Action */
 };
 
@@ -162,8 +159,6 @@ static struct key bindings[] = {
 	{ CONTROL('E'),   SEL_END },
 	/* Go to first file */
 	{ '\'',           SEL_FIRST },
-	/* Jump to an entry number/offset */
-	{ 'J',            SEL_JUMP },
 	/* HOME */
 	{ '~',            SEL_CDHOME },
 	/* Initial directory */
@@ -252,14 +247,12 @@ static struct key bindings[] = {
 	{ 'u',            SEL_UMOUNT },
 	/* Show help */
 	{ '?',            SEL_HELP },
-	/* Toggle auto-advance on file open */
+	/* Toggle auto-jump on open */
 	{ CONTROL('J'),   SEL_AUTONEXT },
 	/* Edit in EDITOR */
 	{ 'e',            SEL_EDIT },
 	/* Run a plugin */
 	{ ';',            SEL_PLUGIN },
-	/* Show total size of listed selection */
-	{ 'S',            SEL_SELSIZE },
 	/* Run command */
 	{ '!',            SEL_SHELL },
 	{ CONTROL(']'),   SEL_SHELL },

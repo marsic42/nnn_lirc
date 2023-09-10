@@ -10,9 +10,8 @@ setopt localoptions noshwordsplit noksharrays
 local -a args
 args=(
     '(-a)-a[auto-create NNN_FIFO]'
-    '(-A)-A[disable dir auto-enter]'
+    '(-A)-A[disable dir auto-select]'
     '(-b)-b[bookmark key to open]:key char'
-    '(-B)-B[use bsdtar for archives]'
     '(-c)-c[cli-only opener]'
     '(-C)-C[color by context]'
     '(-d)-d[start in detail mode]'
@@ -23,8 +22,8 @@ args=(
     '(-g)-g[regex filters]'
     '(-H)-H[show hidden files]'
     '(-i)-i[show current file info]'
-    '(-J)-J[no auto-advance on selection]'
-    '(-K)-K[detect key collision and exit]'
+    '(-J)-J[no auto-jump on select]'
+    '(-K)-K[detect key collision]'
     '(-l)-l[lines to move per scroll]:val'
     '(-n)-n[start in type-to-nav mode]'
     '(-o)-o[open files only on Enter]'

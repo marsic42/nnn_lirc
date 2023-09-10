@@ -2,9 +2,6 @@
 
 # Description: Create and verify checksums
 #
-# Note:  On macOS, install the relevant checksum packages from Homebrew with:
-#            brew install coreutils
-#
 # Details:
 #   - selection: it will generate one file with the checksums and filenames
 #                (and with paths if they are in another directory)
@@ -61,7 +58,7 @@ elif [ -n "$1" ]; then
             if echo "$1" | grep -q \.${chks}$; then
                 ${chks}sum -c < "$1"
                 read -r _
-                exit
+                return
             fi
         done
         checksum_type
